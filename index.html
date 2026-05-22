@@ -255,12 +255,8 @@
         </div>
         <div class="total-box">
           <div class="total-row">
-            <span class="total-label">Totale mensile stimato</span>
+            <span class="total-label">Totale annuale</span>
             <span class="total-main" id="s-total-month">—</span>
-          </div>
-          <div class="total-row">
-            <span class="total-label">Totale annuale stimato</span>
-            <span class="total-sec" id="s-total-year">—</span>
           </div>
         </div>
 
@@ -312,11 +308,11 @@
       const totalYear  = planPrice * 12 + libAnnual;
 
       document.getElementById('s-plan').textContent       = currentPlan;
-      document.getElementById('s-plan-price').textContent = '€' + planPrice + ' / mese';
+      document.getElementById('s-plan-price').textContent = '€' + planPrice + ' / anno';
       document.getElementById('s-qty').textContent        = qty;
       document.getElementById('s-lib-price').textContent  = '€' + libAnnual + ' / anno';
-      document.getElementById('s-total-month').textContent = '€' + totalMonth.toFixed(2);
-      document.getElementById('s-total-year').textContent  = '€' + totalYear.toFixed(2);
+      document.getElementById('s-total-month').textContent = '€' + (planPrice + libAnnual).toFixed(2);
+      document.getElementById('s-total-year').textContent  = '€' + (planPrice + libAnnual).toFixed(2);
     }
 
     update();
