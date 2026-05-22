@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calcolatore Prezzi — Libretti Metrologici</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #5f5e5a;
+      margin-bottom: 2rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 2rem;
+      max-width: 860px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    @media (max-width: 680px) {
+      .layout { grid-template-columns: 1fr; }
+      .summary-sticky { position: static !important; }
+    }
+
+    .step-label {
+      font-size: 12px;
+      color: #5f5e5a;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .plan-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .plan-card {
+      background: #fff;
+      border: 1px solid #e0dfd8;
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .plan-card:hover { border-color: #b4b2a9; }
+    .plan-card.selected { border: 2px solid #185FA5; }
+
+    .plan-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .badge-base       { background: #E6F1FB; color: #0C447C; }
+    .badge-pro        { background: #EAF3DE; color: #27500A; }
+    .badge-enterprise { background: #FAEEDA; color: #633806; }
+    .badge-popular    { background: #E6F1FB; color: #0C447C; }
+
+    .plan-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .plan-name { font-size: 15px; font-weight: 500; margin-bottom: 2px; }
+    .plan-desc { font-size: 13px; color: #5f5e5a; }
+    .plan-price { font-size: 20px; font-weight: 500; text-align: right; }
+    .plan-price-sub { font-size: 12px; color: #5f5e5a; }
+
+    .divider { border: none; border-top: 1px solid #e0dfd8; margin: 1.5rem 0; }
+
+    .qty-hint { font-size: 13px; color: #5f5e5a; margin-bottom: 0.75rem; }
+
+    .qty-controls { display: flex; align-items: center; gap: 12px; }
+
+    .qty-btn {
+      width: 36px; height: 36px;
+      border: 1px solid #e0dfd8;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s;
+      color: #1a1a18;
+    }
+    .qty-btn:hover { background: #f1efe8; }
+
+    .qty-input {
+      width: 80px;
+      text-align: center;
+      font-size: 16px;
+      padding: 6px;
+      border: 1px solid #e0dfd8;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a18;
+      outline: none;
+    }
+    .qty-input:focus { border-color: #185FA5; box-shadow: 0 0 0 2px rgba(24,95,165,0.15); }
+
+    /* Summary */
+    .summary-sticky { position: sticky; top: 1.5rem; }
+
+    .summary-card {
+      background: #fff;
+      border: 1px solid #e0dfd8;
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0dfd8;
+      font-size: 14px;
+    }
+    .summary-row:last-of-type { border-bottom: none; }
+    .summary-muted { color: #5f5e5a; }
+
+    .total-box {
+      background: #f5f5f3;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .total-row + .total-row { margin-top: 4px; }
+
+    .total-label { font-size: 13px; color: #5f5e5a; }
+    .total-main  { font-size: 22px; font-weight: 500; }
+    .total-sec   { font-size: 14px; font-weight: 500; color: #5f5e5a; }
+
+    .summary-note {
+      font-size: 11px;
+      color: #888780;
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div style="max-width: 860px; margin: 0 auto;">
+    <h1>Calcolatore prezzi</h1>
+    <p class="subtitle">Piattaforma digitale per libretti metrologici</p>
+  </div>
+
+  <div class="layout">
+
+    <!-- Colonna sinistra -->
+    <div>
+      <p class="step-label">1 — Seleziona il piano</p>
+      <div class="plan-list" id="plan-list">
+
+        <div class="plan-card selected" data-plan="BASE" onclick="selectPlan(this)">
+          <span class="plan-badge badge-base">BASE</span>
+          <div class="plan-row">
+            <div>
+              <p class="plan-name">1 – 5 Punti Vendita</p>
+              <p class="plan-desc">Fino a 5 PV</p>
+            </div>
+            <div>
+              <p class="plan-price">€49</p>
+              <p class="plan-price-sub">/mese</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-card" data-plan="PRO" onclick="selectPlan(this)">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+            <span class="plan-badge badge-pro" style="margin-bottom:0;">PRO</span>
+            <span class="plan-badge badge-popular" style="margin-bottom:0;">Più scelto</span>
+          </div>
+          <div class="plan-row">
+            <div>
+              <p class="plan-name">6 – 15 Punti Vendita</p>
+              <p class="plan-desc">Fino a 15 PV</p>
+            </div>
+            <div>
+              <p class="plan-price">€69</p>
+              <p class="plan-price-sub">/mese</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-card" data-plan="ENTERPRISE" onclick="selectPlan(this)">
+          <span class="plan-badge badge-enterprise">ENTERPRISE</span>
+          <div class="plan-row">
+            <div>
+              <p class="plan-name">16 – 50 Punti Vendita</p>
+              <p class="plan-desc">Fino a 50 PV</p>
+            </div>
+            <div>
+              <p class="plan-price">€99</p>
+              <p class="plan-price-sub">/mese</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <hr class="divider">
+
+      <p class="step-label">2 — Numero di libretti metrologici</p>
+      <p class="qty-hint">Ogni libretto €19 / anno &nbsp;·&nbsp; minimo: <span id="min-label">1</span></p>
+      <div class="qty-controls">
+        <button class="qty-btn" onclick="changeQty(-1)" aria-label="Diminuisci">−</button>
+        <input type="number" id="qty" class="qty-input" min="1" value="1"
+               oninput="clampAndUpdate()" aria-label="Numero libretti">
+        <button class="qty-btn" onclick="changeQty(1)" aria-label="Aumenta">+</button>
+      </div>
+    </div>
+
+    <!-- Colonna destra: riepilogo -->
+    <div class="summary-sticky">
+      <p class="step-label">Riepilogo</p>
+      <div class="summary-card">
+        <div class="summary-row">
+          <span class="summary-muted">Piano <strong id="s-plan">BASE</strong></span>
+          <span id="s-plan-price">€49 / mese</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-muted"><span id="s-qty">1</span> libretti × €19</span>
+          <span id="s-lib-price">€19 / anno</span>
+        </div>
+        <div class="total-box">
+          <div class="total-row">
+            <span class="total-label">Totale mensile stimato</span>
+            <span class="total-main" id="s-total-month">—</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">Totale annuale stimato</span>
+            <span class="total-sec" id="s-total-year">—</span>
+          </div>
+        </div>
+        <p class="summary-note">
+          I prezzi sono indicativi. Il costo dei libretti è addebitato annualmente.
+          Il canone del piano è mensile.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const plans = {
+      BASE:       { price: 49, min: 1  },
+      PRO:        { price: 69, min: 6  },
+      ENTERPRISE: { price: 99, min: 16 }
+    };
+
+    let currentPlan = 'BASE';
+
+    function selectPlan(el) {
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      currentPlan = el.dataset.plan;
+      const minQty = plans[currentPlan].min;
+      const inp = document.getElementById('qty');
+      inp.min = minQty;
+      if ((parseInt(inp.value) || 0) < minQty) inp.value = minQty;
+      document.getElementById('min-label').textContent = minQty;
+      update();
+    }
+
+    function changeQty(delta) {
+      const inp = document.getElementById('qty');
+      const minQty = plans[currentPlan].min;
+      inp.value = Math.max(minQty, (parseInt(inp.value) || minQty) + delta);
+      update();
+    }
+
+    function clampAndUpdate() {
+      const inp = document.getElementById('qty');
+      const minQty = plans[currentPlan].min;
+      if ((parseInt(inp.value) || 0) < minQty) inp.value = minQty;
+      update();
+    }
+
+    function update() {
+      const qty = parseInt(document.getElementById('qty').value) || plans[currentPlan].min;
+      const planPrice = plans[currentPlan].price;
+      const libAnnual = qty * 19;
+      const totalMonth = planPrice + libAnnual / 12;
+      const totalYear  = planPrice * 12 + libAnnual;
+
+      document.getElementById('s-plan').textContent       = currentPlan;
+      document.getElementById('s-plan-price').textContent = '€' + planPrice + ' / mese';
+      document.getElementById('s-qty').textContent        = qty;
+      document.getElementById('s-lib-price').textContent  = '€' + libAnnual + ' / anno';
+      document.getElementById('s-total-month').textContent = '€' + totalMonth.toFixed(2);
+      document.getElementById('s-total-year').textContent  = '€' + totalYear.toFixed(2);
+    }
+
+    update();
+  </script>
+
+</body>
+</html>
